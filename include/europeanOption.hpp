@@ -49,7 +49,7 @@ public:
    * @param numSimulations The number of simulation paths to run.
    * @return std::pair<double, double> (callPrice, putPrice)
    */
-  std::pair<double, double> calculatePrice(int numSimulations) const;
+ [[nodiscard]] std::pair<double, double> calculatePrice(int numSimulations) const;
 
 private:
   const double m_S0;                // Initial stock price

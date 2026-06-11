@@ -1,6 +1,9 @@
 #include "../include/europeanOption.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
 
 namespace py = pybind11;
 
@@ -22,5 +25,5 @@ PYBIND11_MODULE(monte_carlo_pricer, m) {
 
       .def("calculatePrice", &EuropeanOption::calculatePrice,
            "Calculate the European Call and Put option prices",
-           py::arg("numSimulations"));
+           py::arg("numSimulations"), py::call_guard<py::gil_scoped_release>());
 }
