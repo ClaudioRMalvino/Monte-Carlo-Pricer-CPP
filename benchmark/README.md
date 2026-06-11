@@ -55,6 +55,30 @@ Benchmarks were executed on the following system:
 | Python              |                           0.68 s |                    11.18 s |
 | C++                 |                           0.21 s |                     3.54 s |
 
+### OpenMP Parallel Scaling
+
+The C++ engine is parallelized with OpenMP: each thread draws from its own
+`std::mt19937` stream (seeded by base seed + thread id) and the call/put
+payoffs are combined with a `reduction`. This is thread-safe and reproducible
+for a fixed thread count. The benchmark below (`parallel_scaling.py`, 10M paths)
+reports the best of 7 runs per thread count with a cooldown between
+configurations to limit thermal throttling on the laptop CPU.
+
+| Threads | Time [s] | Speedup | Efficiency |
+|:-------:|---------:|--------:|-----------:|
+| 1       |    0.373 |   1.00× |       100% |
+| 2       |    0.179 |   2.08× |       104% |
+| 3       |    0.126 |   2.96× |        99% |
+| 4       |    0.108 |   3.46× |        87% |
+| 8       |    0.091 |   4.10× |        51% |
+
+Speedup is near-linear up to the 4 physical cores (3.46× at 4 threads), with
+hyper-threading pushing the peak to ~4.1× across 8 logical threads.
+
+![OpenMP Runtime](examples/omp_parallel_runtime.svg)
+
+![OpenMP Speedup](examples/omp_parallel_speedup.svg)
+
 ### Interpretation
 
 - The C++ backend consistently outperforms the pure Python implementation by approximately 3×.

@@ -2,16 +2,18 @@
 
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)]()
 [![pybind11](https://img.shields.io/badge/pybind11-Enabled-green.svg)]()
+[![OpenMP](https://img.shields.io/badge/OpenMP-Parallel-orange.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 This project is a high-performance C++ library for pricing European Call and Put options using the Monte Carlo method.
 
-The core computational engine is written in modern C++ (C++20) for speed, and it is exposed as a Python module using `pybind11`. This creates a high-performance backend that can be easily imported and used in standard Python-based financial analysis and research scripts. It includes benchmarking against a pure Python implementation and demonstrates a reproducible ~3× performance improvement, with deterministic random number generation and type-hinted interfaces suitable for research, quantitative finance, and HPC development.
+The core computational engine is written in modern C++ (C++20) for speed, parallelized with OpenMP, and exposed as a Python module using `pybind11`. This creates a high-performance backend that can be easily imported and used in standard Python-based financial analysis and research scripts. It includes benchmarking against a pure Python implementation (a reproducible ~3× single-thread speedup) and OpenMP scaling benchmarks (up to ~4× on an 8-thread CPU), with deterministic random number generation and type-hinted interfaces suitable for research, quantitative finance, and HPC development.
 
 ## Key Features
 
 * **Fast C++ Engine:** The core simulation loop is written in C++ for native performance.
-* **Python API:** A clean, importable Python module created with `pybind11`.
+* **Parallelized with OpenMP:** Each thread draws from its own RNG stream (seeded per thread) and payoffs are accumulated with an OpenMP reduction — thread-safe and reproducible for a fixed thread count.
+* **Python API:** A clean, importable Python module created with `pybind11` (the GIL is released during pricing so threads run concurrently).
 * **Robust Design:** The C++ `EuropeanOption` class is `const`-correct and immutable.
 * **Testable & Reproducible:** Implements constructor overloading to allow for both random and fixed-seed generation, which is critical for testing and reproducibility.
 * **Type-Hinted:** A complete `.pyi` stub file is provided for full autocompletion and static analysis (e.g., `pyright`, `mypy`) in your editor.
@@ -29,9 +31,18 @@ Below is a sample benchmark demonstrating runtime scaling and speedup:
 
 ![Speedup Plot](benchmark/examples/python_vs_cpp_num_paths_speedup.svg)
 
+### OpenMP Parallel Scaling
+
+Strong scaling of the C++ engine (10M paths) across thread counts on a 4-core / 8-thread CPU. Speedup is near-linear up to the 4 physical cores, with hyper-threading taking it to ~4×:
+
+![OpenMP Runtime](benchmark/examples/omp_parallel_runtime.svg)
+
+![OpenMP Speedup](benchmark/examples/omp_parallel_speedup.svg)
+
 ## Technology Stack
 
 * **Core Engine:** C++20
+* **Parallelism:** OpenMP
 * **Python Bridge:** `pybind11`
 * **Interface:** Python 3
 * **Build System:** `CMake`
@@ -40,16 +51,23 @@ Below is a sample benchmark demonstrating runtime scaling and speedup:
 
 To build this library, you will need:
 
-* A C++20 compatible compiler (e.g., `g++`, `clang++`)
+* A C++20 compatible compiler with OpenMP support (e.g., `g++`, `clang++`)
 * `CMake`
 * `Python`
 * `pybind11`
-* `numpy` (for running the benchmark)
+* `numpy` and `matplotlib` (for running the benchmarks)
 
 The easiest way to get the build dependencies is via `conda`:
 
 ```bash
 conda install -c conda-forge pybind11 cmake cxx-compiler
+```
+
+To run the OpenMP scaling benchmark, set the thread count via `OMP_NUM_THREADS` (the included `parallel_scaling.py` sweeps this automatically):
+
+```bash
+cd benchmark
+PYTHONPATH=../build/python:../python python parallel_scaling.py
 ```
 
 ## How to Build
